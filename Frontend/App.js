@@ -3,6 +3,9 @@ import {
   StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, SafeAreaView
 } from 'react-native';
 
+// הכתובת הציבורית של השרת ב-Render (עדכן אם הכתובת שקיבלת מ-Render שונה)
+const API_BASE_URL = 'https://math-app-backend.onrender.com';
+
 export default function App() {
   const [expression, setExpression] = useState('');
   const [solveType, setSolveType] = useState('solve');
@@ -33,7 +36,7 @@ export default function App() {
   const fetchHistory = async () => {
     setHistoryLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/history');
+      const response = await fetch(`${API_BASE_URL}/history`);
       const res = await response.json();
       if (res.status === 'success') {
         setHistoryData(res.history);
@@ -57,7 +60,7 @@ export default function App() {
     setResult(null);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/solve', {
+      const response = await fetch(`${API_BASE_URL}/solve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ expression, type: solveType })
@@ -80,7 +83,7 @@ export default function App() {
     setChatLoading(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/tutor', {
+      const response = await fetch(`${API_BASE_URL}/tutor`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: userMsg, topic: 'general' })
@@ -103,7 +106,7 @@ export default function App() {
     setStudentAnswer('');
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/generate-quiz', {
+      const response = await fetch(`${API_BASE_URL}/generate-quiz`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic: quizTopic, difficulty: quizDifficulty })
@@ -124,7 +127,7 @@ export default function App() {
     setEvalLoading(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/evaluate-quiz', {
+      const response = await fetch(`${API_BASE_URL}/evaluate-quiz`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -149,7 +152,7 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Math & Physics AI</Text>
-        <Text style={styles.headerSubtitle}>5 יחידות לימוד | Database & Learning Analytics</Text>
+        <Text style={styles.headerSubtitle}>5 יחידות לימוד | Database & Cloud Analytics</Text>
       </View>
 
       <View style={styles.tabContainer}>
