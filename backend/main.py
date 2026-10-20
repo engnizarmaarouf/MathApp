@@ -16,9 +16,12 @@ from sqlalchemy.orm import declarative_base, sessionmaker, Session
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if DATABASE_URL:
-    # Render מספק כתובת המתחילה ב-postgres://, אך SQLAlchemy דורשת postgresql://
+    # Render מספק כתובת המתחילה ב-postgres://, אנו מעדכנים ל-postgresql+psycopg2://
     if DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif DATABASE_URL.startswith("postgresql://"):
+        DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+        
     engine = create_engine(DATABASE_URL)
 else:
     # ברירת מחדל לפיתוח מקומי במחשב
@@ -201,7 +204,7 @@ def evaluate_quiz(req: EvaluateQuizRequest, db: Session = Depends(get_db)):
         else:
             eval_text = "תשובתך נקלטה בהצלחה ונשמרה במסד הנתונים!"
 
-        # שמירת התתרגול במסד הנתונים (PostgreSQL/SQLite)
+        # שמירת התרגול במסד הנתונים (PostgreSQL/SQLite)
         new_entry = QuizHistoryDB(
             topic=req.topic,
             question=req.question,
