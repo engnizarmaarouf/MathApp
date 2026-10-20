@@ -11,20 +11,21 @@ from sqlalchemy import create_engine, Column, Integer, String, Text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 
 # ==========================================
-# 1. Database Configuration (PostgreSQL / SQLite)
+# 1. Database Configuration (PostgreSQL / SQLite Fallback)
 # ==========================================
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-if DATABASE_URL:
-    # Render מספק כתובת המתחילה ב-postgres://, אנו מעדכנים ל-postgresql+psycopg2://
+if DATABASE_URL and DATABASE_URL.strip():
+    DATABASE_URL = DATABASE_URL.strip()
     if DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
     elif DATABASE_URL.startswith("postgresql://"):
         DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
         
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+    print("Using PostgreSQL Database from environment.")
 else:
-    # ברירת מחדל לפיתוח מקומי במחשב
+    print("Warning: DATABASE_URL is not set. Falling back to local SQLite.")
     engine = create_engine("sqlite:///./app_data.db", connect_args={"check_same_thread": False})
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -41,8 +42,12 @@ class QuizHistoryDB(Base):
     evaluation = Column(Text, nullable=True)
     timestamp = Column(String(50), nullable=True)
 
-# יצירת הטבלאות במידה ואינן קיימות
-Base.metadata.create_all(bind=engine)
+# יצירת הטבלאות בבטחה בעליית השרת
+try:
+    Base.metadata.create_all(bind=engine)
+    print("Database tables created successfully!")
+except Exception as e:
+    print(f"Warning: Database initialization error: {e}")
 
 def get_db():
     db = SessionLocal()
@@ -110,7 +115,7 @@ def solve_math(req: SolveRequest):
             if simplified != derivative:
                 steps.append(f"נגזרת מופשטת: f'(x) = {simplified}")
         else:
-            steps.append(f"משוואה להתקבלת פתרון: {expr} = 0")
+            steps.append(f"משוואה לקבלת פתרון: {expr} = 0")
             solutions = sp.solve(expr, x)
             steps.append(f"פתרונות עבור x: {solutions}")
 
@@ -155,7 +160,7 @@ def generate_quiz(req: GenerateQuizRequest):
     try:
         prompt = (
             f"צור שאלת תרגול במתמטיקה בנושא '{req.topic}' ברמת קושי '{req.difficulty}' ברמת 5 יחידות לימוד.\n"
-            "החזר את התשובה בפורמט JSON בלבד, עם המפתחות exact:\n"
+            "החזר את התשובה בפורמט JSON בלבד, עם המפתחות:\n"
             "{\n"
             '  "question": "נוסח השאלה בעברית",\n'
             '  "hint": "רמז קצר לתלמיד",\n'
@@ -204,7 +209,6 @@ def evaluate_quiz(req: EvaluateQuizRequest, db: Session = Depends(get_db)):
         else:
             eval_text = "תשובתך נקלטה בהצלחה ונשמרה במסד הנתונים!"
 
-        # שמירת התרגול במסד הנתונים (PostgreSQL/SQLite)
         new_entry = QuizHistoryDB(
             topic=req.topic,
             question=req.question,
