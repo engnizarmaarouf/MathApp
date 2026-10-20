@@ -6,4 +6,5 @@ pillow-heif
 python-multipart
 openai
 pydantic
+sqlalchemy
 psycopg2-binary
