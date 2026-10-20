@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+sympy
+pillow
+pillow-heif
+python-multipart
+openai
+pydantic
